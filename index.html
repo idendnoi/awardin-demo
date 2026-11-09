@@ -1208,9 +1208,11 @@ async function upSubmit(){
   const a = {id:newId(), code:'', name:f.name || STUDENT.name, sid:STUDENT.sid, team:f.team || '', award:String(f.award).replace(/\s/g,''), contest:f.contest, org:f.org, signer:f.signer || '', date:isoDate(f.date) || f.date, status:'pending', source:'legacy', createdAt:Date.now(), thumb:S.up.thumb || ''};
   try { await save(a); S.up = {preview:null, thumb:'', form:null, note:''}; S.hist = S.hist.filter(p => !p.startsWith('s/upload')); nav('s/upload/3', {replace:true}); } catch(err) { writeErr(err); }
 }
+function vScrollTo(sel){ setTimeout(() => { const el = document.querySelector('#page ' + sel) || document.querySelector(sel); if (!el) return; const head = document.querySelector('.s-head, .v-head, header'); const off = (head ? head.getBoundingClientRect().height : 64) + 16; window.scrollTo({top:el.getBoundingClientRect().top + window.scrollY - off, behavior:'smooth'}); }, 60); }
 async function compareBlob(blob){
   const V = S.v; V.preview = URL.createObjectURL(blob); V.copy = null; V.busy = true;
   if (S.path !== 'v' && S.path !== 'v/copy') nav('v', {instant:true}); else render(false);
+  vScrollTo('.v-tabs');
   const t0 = Date.now(); let res = {code:null, orig:null, tam:null, view:null};
   try {
     const bmp = await createImageBitmap(blob); const rd = wmRead(bmp), dec = rd.dec;
@@ -1221,6 +1223,7 @@ async function compareBlob(blob){
   V.busy = false; V.copy = res;
   if (res.orig) logLookup(res.code, res.orig.status === 'revoked' ? 'revoked' : res.tam.fields.length ? 'forged' : 'ok', 'wm');
   render(false);
+  vScrollTo('.verdict');
 }
 const exampleOrig = () => byCode('AI-25-7F3A-91C2') || S.awards.find(a => a.status === 'issued' && a.code && a.award !== '대상');
 async function genuine(){
