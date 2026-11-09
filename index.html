@@ -135,6 +135,10 @@ td .cell-input:hover{border-color:var(--line)} td .cell-input:focus{outline:none
 .g-ok{background:var(--brand)}.g-pe{background:var(--warn)}
 .g-add .g-th{background:transparent;border:1.5px dashed var(--line-strong);color:var(--brand)}.g-add .g-th svg{width:28px;height:28px}
 .g-add b{color:var(--brand)}
+.demo-pick{display:flex;gap:18px;align-items:center;border:1px solid var(--brand-line);background:var(--brand-soft);border-radius:16px;padding:16px 20px;flex-wrap:wrap}
+.demo-pick img{width:72px;aspect-ratio:3/4;border-radius:3px;box-shadow:0 4px 12px rgba(20,24,40,.15);background:#FBF9F4}
+.demo-pick .dp-tx{display:grid;gap:2px;flex:1;min-width:200px}.demo-pick .dp-tx b{font-size:16px}
+.demo-pick .dp-act{display:grid;gap:8px;justify-items:center}
 .out-card{border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:14px;background:#fff}
 .out-card .oc-hd{display:flex;gap:14px;align-items:flex-start}.out-card h3{font-size:17px;font-weight:700;margin-bottom:4px}.out-card p{color:var(--ink-2,#555);font-size:14px;line-height:1.55}
 .oc-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--brand-soft,#EAF3FF);color:var(--brand,#2F7BEA)}
@@ -996,7 +1000,9 @@ function vCopy(){
     : V.copy ? compareHtml(V.copy) + `<div class="row" style="justify-content:center"><button class="btn btn-light btn-sm" data-act="wm-reset">다른 상장 확인하기</button></div>`
     : `<div class="dropzone" id="drop"><span class="ic">${I.upload}</span><div><b>받은 상장 이미지를 올려 주세요</b><div class="help">원본 파일이나 화면 캡처 모두 됩니다.</div></div>
     <div class="row" style="justify-content:center"><label class="btn btn-dark" for="vFile">이미지 선택</label><input id="vFile" type="file" accept="image/png,image/jpeg,image/webp" class="sr"></div>
-    <div class="row" style="justify-content:center"><button class="btn btn-ghost btn-sm" data-act="genuine">예시: 진본 상장</button><button class="btn btn-ghost btn-sm" data-act="forgery">예시: 상 이름을 고친 위조 상장</button></div></div>`}</div>`;
+    </div>
+    ${exampleOrig() ? `<div class="demo-pick"><img data-cert="${esc(exampleOrig().id)}" data-w="220" alt="시연용 예시 상장"><div class="dp-tx"><span class="help" style="font-weight:600">시연용 예시 상장</span><b>${esc(exampleOrig().name)} · ${esc(exampleOrig().award)}</b><span class="help">${esc(exampleOrig().contest)} · ${esc(signLine(exampleOrig()))}</span></div>
+      <div class="dp-act"><button class="btn btn-brand btn-lg" data-act="genuine">${I.upload} 예시 상장 올려서 확인하기</button><button class="link" style="font-size:13px" data-act="forgery">상 이름을 고친 위조본으로 해보기</button></div></div>` : ''}`}</div>`;
 }
 const FIELDS = [['award','상'],['name','수상자'],['team','팀'],['contest','대회'],['org','수여 기관'],['date','수여일']];
 const norm = (k, v) => k === 'date' ? isoDate(v) : String(v||'').replace(/\s+/g,'').replace(/팀$/,'');
