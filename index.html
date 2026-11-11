@@ -139,6 +139,27 @@ td .cell-input:hover{border-color:var(--line)} td .cell-input:focus{outline:none
 .demo-pick img{width:72px;aspect-ratio:3/4;border-radius:3px;box-shadow:0 4px 12px rgba(20,24,40,.15);background:#FBF9F4}
 .demo-pick .dp-tx{display:grid;gap:2px;flex:1;min-width:200px}.demo-pick .dp-tx b{font-size:16px}
 .demo-pick .dp-act{display:grid;gap:8px;justify-items:center}
+/* 사용자 구역: 발급 기관 = AwardIn 하늘색, 학생 = 흰색, 진위 확인 = 기본 */
+html,body,.side,.topbar,.s-head,.mobile-tabs,body::before{transition:background-color .4s ease,border-color .4s ease}
+html[data-zone="issuer"]{--bg:#EAF3FF;--line:#D3E3F8;--sunken:#DDEBFF}
+html[data-zone="issuer"] .side{background:#DDEBFF;border-right-color:#C9DEFC}
+html[data-zone="issuer"] .topbar{border-bottom-color:#C9DEFC}
+html[data-zone="issuer"] .side-nav button[aria-current="page"]{background:#fff;box-shadow:0 0 0 1px #C9DEFC}
+html[data-zone="issuer"] .side-nav button:hover{background:#CFE3FF}
+html[data-zone="issuer"] .org{border-color:#C9DEFC}
+html[data-zone="issuer"] .demo-ribbon{background:rgba(255,255,255,.55);border-bottom-color:#C9DEFC}
+html[data-zone="issuer"] .mobile-tabs{background:#DDEBFF;border-bottom-color:#C9DEFC}
+html[data-zone="issuer"] th{background:#F3F8FF}
+html[data-zone="issuer"] .table-wrap,html[data-zone="issuer"] .panel,html[data-zone="issuer"] .kpi,html[data-zone="issuer"] .contest,html[data-zone="issuer"] .card,html[data-zone="issuer"] .out-card{border-color:#D3E3F8;box-shadow:0 1px 2px rgba(30,70,140,.04),0 6px 18px rgba(30,70,140,.06)}
+html[data-zone="issuer"] .stepper div{background:#fff}
+html[data-zone="issuer"] .verdict.ok{background:#E3F5EA}
+.role-badge{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 11px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;flex:none}
+.role-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.role-badge.issuer{background:var(--brand);color:#fff}.role-badge.issuer::before{background:#BFDCFF}
+.role-badge.student{background:#F1F3F6;color:#5B616B;border:1px solid #E1E5EB}
+.zone-dot{width:10px;height:10px;border-radius:50%;margin-left:auto;box-shadow:0 0 0 1px rgba(20,40,80,.25);flex:none}
+.pop .item .zone-dot{align-self:center}
+@media (max-width:700px){.s-head .role-badge{display:none}}
 .out-card{border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:14px;background:#fff}
 .out-card .oc-hd{display:flex;gap:14px;align-items:flex-start}.out-card h3{font-size:17px;font-weight:700;margin-bottom:4px}.out-card p{color:var(--ink-2,#555);font-size:14px;line-height:1.55}
 .oc-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--brand-soft,#EAF3FF);color:var(--brand,#2F7BEA)}
@@ -693,12 +714,12 @@ function cShell(crumbs, inner){
       <nav class="side-nav" style="margin-top:8px">${nav1.map(([k,l,ic,to]) => `<button data-go="${to}" ${sec === k ? 'aria-current="page"' : ''}>${ic}<span>${l}</span>${k === 'requests' && cnt ? `<span class="badge">${cnt}</span>` : ''}</button>`).join('')}</nav>
       <nav class="side-nav"><button data-go="v">${I.shield}<span>공개 진위 확인</span></button></nav>
       <div class="side-foot"><div class="row" style="padding:6px 8px"><span class="avatar">${esc(ORG.staff.slice(-2))}</span><b style="font-size:13.5px">${esc(ORG.staff)}</b></div>
-        <button class="btn btn-ghost btn-sm" data-act="switch" style="justify-content:flex-start">${I.swap} 학생 계정으로 전환</button>
+        <button class="btn btn-ghost btn-sm" data-act="switch" style="justify-content:flex-start">${I.swap} 학생 계정으로 전환<i class="zone-dot" style="background:#fff"></i></button>
         <button class="btn btn-ghost btn-sm" data-act="logout" style="justify-content:flex-start">${I.out} 로그아웃</button></div>
     </aside>
     <div class="main">${ribbon()}
       <div class="topbar">
-        <div class="crumbs">${crumbs.map(([l,to],i) => i < crumbs.length-1 ? `<button data-go="${to}">${esc(l)}</button><span>/</span>` : `<b>${esc(l)}</b>`).join('')}</div>
+        <span class="role-badge issuer">발급 기관</span><div class="crumbs">${crumbs.map(([l,to],i) => i < crumbs.length-1 ? `<button data-go="${to}">${esc(l)}</button><span>/</span>` : `<b>${esc(l)}</b>`).join('')}</div>
         <div class="search anchor"><span>${I.search}</span><input class="input" id="gSearch" placeholder="이름·검증번호·대회 검색" value="${esc(S.search)}" autocomplete="off" aria-label="상장 검색">
           ${q ? `<div class="pop" style="left:0;right:auto;width:100%"><div class="hd">검색 결과 ${hits.length}건</div>${hits.length ? hits.map(a => `<button class="item" data-go="${a.status === 'pending' ? 'c/request/' : 'c/award/'}${esc(a.id)}"><span class="avatar">${esc(initials(a.name))}</span><span><b>${esc(a.name)} · ${esc(a.award)}</b><small>${esc(a.contest)} · <span class="mono">${esc(a.code || '번호 없음')}</span></small></span></button>`).join('') : '<div class="help" style="padding:10px 12px">일치하는 상장이 없어요.</div>'}</div>` : ''}</div>
         <div class="anchor"><button class="icon-btn" data-act="pop-notif" aria-label="알림">${I.bell}${notif ? `<span class="dotn">${notif}</span>` : ''}</button>
@@ -866,10 +887,10 @@ function sShell(inner){
   const unread = mine().filter(a => (a.reviewedAt || a.createdAt) > Date.now() - 3*864e5 && a.status !== 'pending').length;
   const p = S.path, cur = p.startsWith('s/upload') ? 'upload' : p.startsWith('s/notif') ? 'notif' : 'home';
   return `${ribbon()}<header class="s-head"><div class="wrap">
-    <button class="logo" data-go="s/home">${LOGO}</button>
+    <button class="logo" data-go="s/home">${LOGO}</button><span class="role-badge student">학생</span>
     <nav class="s-tabs"><button data-go="s/home" ${cur === 'home' ? 'aria-current="page"' : ''}>내 상장</button><button data-go="s/upload/1" ${cur === 'upload' ? 'aria-current="page"' : ''}>상장 등록</button><button data-go="s/notifications" ${cur === 'notif' ? 'aria-current="page"' : ''}>알림${unread ? `<span class="n">${unread}</span>` : ''}</button></nav>
     <div class="anchor"><button class="icon-btn" data-act="pop-me" aria-label="내 계정" style="border-radius:999px;width:40px;height:40px">${esc(initials(STUDENT.name))}</button>
-      ${S.pop === 'me' ? `<div class="pop" style="width:250px"><div class="hd">${esc(STUDENT.name)}<div class="help" style="font-weight:500">${esc(STUDENT.dept)}</div></div><button class="item" data-go="v">${I.shield} 공개 진위 확인</button><button class="item" data-act="switch">${I.swap} 기관 계정으로 전환</button><button class="item" data-act="logout">${I.out} 로그아웃</button></div>` : ''}</div>
+      ${S.pop === 'me' ? `<div class="pop" style="width:250px"><div class="hd">${esc(STUDENT.name)}<div class="help" style="font-weight:500">${esc(STUDENT.dept)}</div></div><button class="item" data-go="v">${I.shield} 공개 진위 확인</button><button class="item" data-act="switch">${I.swap} 기관 계정으로 전환<i class="zone-dot" style="background:#B9D7FF"></i></button><button class="item" data-act="logout">${I.out} 로그아웃</button></div>` : ''}</div>
   </div></header>
   <main class="wrap s-body" id="page">${inner}</main>`;
 }
@@ -1047,6 +1068,7 @@ function render(enter = true, loading = false){
     else if (seg[1]) html = vShell(loading ? skeleton() : vResult(decodeURIComponent(seg[1])), 'code');
     else html = vShell(vCopy(), 'copy');
   }
+  { const z = p.startsWith('c/') ? 'issuer' : p.startsWith('s/') ? 'student' : p === 'login' ? '' : 'verify'; const de = document.documentElement; if (de.dataset.zone !== z) { if (z) de.dataset.zone = z; else delete de.dataset.zone; } }
   $('#root').innerHTML = html;
   if (enter && !loading) { const pg = $('#page'); if (pg) pg.classList.add('enter'); }
   fillCerts(); drawPv(); drawRp();
