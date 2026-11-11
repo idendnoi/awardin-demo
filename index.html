@@ -160,6 +160,11 @@ html[data-zone="issuer"] .verdict.ok{background:#E3F5EA}
 .zone-dot{width:10px;height:10px;border-radius:50%;margin-left:auto;box-shadow:0 0 0 1px rgba(20,40,80,.25);flex:none}
 .pop .item .zone-dot{align-self:center}
 @media (max-width:700px){.s-head .role-badge{display:none}}
+.back-btn{width:38px;height:38px;flex:none;border-radius:10px}
+.back-btn svg{width:18px;height:18px}
+.back-btn:disabled{opacity:.35;cursor:default}.back-btn:disabled:hover{background:var(--surface)}
+.s-head .back-btn{margin-right:-8px}
+html[data-zone="issuer"] .back-btn{border-color:#C9DEFC}
 .out-card{border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:14px;background:#fff}
 .out-card .oc-hd{display:flex;gap:14px;align-items:flex-start}.out-card h3{font-size:17px;font-weight:700;margin-bottom:4px}.out-card p{color:var(--ink-2,#555);font-size:14px;line-height:1.55}
 .oc-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--brand-soft,#EAF3FF);color:var(--brand,#2F7BEA)}
@@ -647,7 +652,7 @@ async function extract(blob, fallback){
 /* router */
 let navToken = 0;
 async function nav(path, opts = {}){
-  if (!opts.replace && S.path !== path) S.hist.push(S.path);
+  if (!opts.replace && S.path !== path) { S.hist.push(S.path); try { history.pushState({aw:S.hist.length}, ''); S.hsN = (S.hsN || 0) + 1; } catch(e) {} }
   S.path = path; S.pop = null; S.confirm = null;
   const tok = ++navToken, bar = $('#progress');
   bar.className = ''; void bar.offsetWidth; bar.className = 'run';
@@ -655,14 +660,18 @@ async function nav(path, opts = {}){
   bar.className = 'done';
   render(true); window.scrollTo({top:0});
 }
-function back(fallback){ const p = S.hist.pop(); nav(p || fallback, {replace:true}); }
+function homeOf(){ return S.role === 'issuer' ? 'c/home' : S.role === 'student' ? 's/home' : 'login'; }
+function back(fallback){ const p = S.hist.pop(); nav(p || fallback || homeOf(), {replace:true}); }
+function goBack(fallback){ if (S.hsN > 0) { S.backFb = fallback; try { history.back(); return; } catch(e) {} } back(fallback); }
+window.addEventListener('popstate', () => { if (S.hsN > 0) S.hsN--; const fb = S.backFb; S.backFb = null; back(fb); });
+const backBtn = () => `<button class="icon-btn back-btn" data-act="goback" aria-label="뒤로 가기" title="뒤로 가기" ${S.hist.length ? '' : 'disabled'}>${I.left}</button>`;
 function guard(){
   const p = S.path;
   if (p.startsWith('c/') && S.role !== 'issuer') { S.path = 'login'; S.loginTab = 'issuer'; }
   if (p.startsWith('s/') && S.role !== 'student') { S.path = 'login'; S.loginTab = 'student'; }
 }
-function login(role){ S.role = role; try { localStorage.setItem('awardin.role', role); } catch(e) {} S.hist = []; toast(role === 'issuer' ? `${ORG.name} 계정으로 로그인했어요.` : `${STUDENT.name}님, 환영합니다.`); nav(role === 'issuer' ? 'c/home' : 's/home'); }
-function logout(){ S.role = null; try { localStorage.removeItem('awardin.role'); } catch(e) {} S.hist = []; toast('로그아웃했어요.'); nav('login'); }
+function login(role){ S.role = role; try { localStorage.setItem('awardin.role', role); } catch(e) {} S.hist = []; S.hsN = 0; toast(role === 'issuer' ? `${ORG.name} 계정으로 로그인했어요.` : `${STUDENT.name}님, 환영합니다.`); nav(role === 'issuer' ? 'c/home' : 's/home', {replace:true}); }
+function logout(){ S.role = null; try { localStorage.removeItem('awardin.role'); } catch(e) {} S.hist = []; S.hsN = 0; toast('로그아웃했어요.'); nav('login', {replace:true}); }
 
 function ribbon(){
   if (S.mode === 'local') return `<div class="demo-ribbon"><b>체험 모드</b> · 새로고침하면 처음 상태로 돌아가요.</div>`;
@@ -719,7 +728,7 @@ function cShell(crumbs, inner){
     </aside>
     <div class="main">${ribbon()}
       <div class="topbar">
-        <span class="role-badge issuer">발급 기관</span><div class="crumbs">${crumbs.map(([l,to],i) => i < crumbs.length-1 ? `<button data-go="${to}">${esc(l)}</button><span>/</span>` : `<b>${esc(l)}</b>`).join('')}</div>
+        ${backBtn()}<span class="role-badge issuer">발급 기관</span><div class="crumbs">${crumbs.map(([l,to],i) => i < crumbs.length-1 ? `<button data-go="${to}">${esc(l)}</button><span>/</span>` : `<b>${esc(l)}</b>`).join('')}</div>
         <div class="search anchor"><span>${I.search}</span><input class="input" id="gSearch" placeholder="이름·검증번호·대회 검색" value="${esc(S.search)}" autocomplete="off" aria-label="상장 검색">
           ${q ? `<div class="pop" style="left:0;right:auto;width:100%"><div class="hd">검색 결과 ${hits.length}건</div>${hits.length ? hits.map(a => `<button class="item" data-go="${a.status === 'pending' ? 'c/request/' : 'c/award/'}${esc(a.id)}"><span class="avatar">${esc(initials(a.name))}</span><span><b>${esc(a.name)} · ${esc(a.award)}</b><small>${esc(a.contest)} · <span class="mono">${esc(a.code || '번호 없음')}</span></small></span></button>`).join('') : '<div class="help" style="padding:10px 12px">일치하는 상장이 없어요.</div>'}</div>` : ''}</div>
         <div class="anchor"><button class="icon-btn" data-act="pop-notif" aria-label="알림">${I.bell}${notif ? `<span class="dotn">${notif}</span>` : ''}</button>
@@ -887,7 +896,7 @@ function sShell(inner){
   const unread = mine().filter(a => (a.reviewedAt || a.createdAt) > Date.now() - 3*864e5 && a.status !== 'pending').length;
   const p = S.path, cur = p.startsWith('s/upload') ? 'upload' : p.startsWith('s/notif') ? 'notif' : 'home';
   return `${ribbon()}<header class="s-head"><div class="wrap">
-    <button class="logo" data-go="s/home">${LOGO}</button><span class="role-badge student">학생</span>
+    ${backBtn()}<button class="logo" data-go="s/home">${LOGO}</button><span class="role-badge student">학생</span>
     <nav class="s-tabs"><button data-go="s/home" ${cur === 'home' ? 'aria-current="page"' : ''}>내 상장</button><button data-go="s/upload/1" ${cur === 'upload' ? 'aria-current="page"' : ''}>상장 등록</button><button data-go="s/notifications" ${cur === 'notif' ? 'aria-current="page"' : ''}>알림${unread ? `<span class="n">${unread}</span>` : ''}</button></nav>
     <div class="anchor"><button class="icon-btn" data-act="pop-me" aria-label="내 계정" style="border-radius:999px;width:40px;height:40px">${esc(initials(STUDENT.name))}</button>
       ${S.pop === 'me' ? `<div class="pop" style="width:250px"><div class="hd">${esc(STUDENT.name)}<div class="help" style="font-weight:500">${esc(STUDENT.dept)}</div></div><button class="item" data-go="v">${I.shield} 공개 진위 확인</button><button class="item" data-act="switch">${I.swap} 기관 계정으로 전환<i class="zone-dot" style="background:#B9D7FF"></i></button><button class="item" data-act="logout">${I.out} 로그아웃</button></div>` : ''}</div>
@@ -1000,7 +1009,7 @@ function sNotifications(){
 /* public verify */
 function vShell(inner, tab){
   const chips = S.awards.filter(a => a.status === 'issued' && a.code).slice(0,3);
-  return `${ribbon()}<header class="s-head"><div class="wrap"><button class="logo" data-go="v">${LOGO}</button><span class="pill mute plain">진위 확인</span><span style="margin-left:auto"></span>${S.role ? `<button class="btn btn-light btn-sm" data-go="${S.role === 'issuer' ? 'c/home' : 's/home'}">${S.role === 'issuer' ? '기관 콘솔' : '내 상장'}로 돌아가기</button>` : `<button class="btn btn-light btn-sm" data-go="login">로그인</button>`}</div></header>
+  return `${ribbon()}<header class="s-head"><div class="wrap">${backBtn()}<button class="logo" data-go="v">${LOGO}</button><span class="pill mute plain">진위 확인</span><span style="margin-left:auto"></span>${S.role ? `<button class="btn btn-light btn-sm" data-go="${S.role === 'issuer' ? 'c/home' : 's/home'}">${S.role === 'issuer' ? '기관 콘솔' : '내 상장'}로 돌아가기</button>` : `<button class="btn btn-light btn-sm" data-go="login">로그인</button>`}</div></header>
   <section class="v-hero"><div class="wrap"><h1>상장 진위 확인</h1><p>상장 이미지를 올리면 숨은 워터마크로 원본을 찾아요. 검증번호로도 확인할 수 있어요.</p>
     <form class="vsearch" data-form="verify"><input class="input" id="vCode" placeholder="AI-25-7F3A-91C2" value="${esc(S.v.code)}" aria-label="검증번호" autocomplete="off"><button class="btn btn-dark" type="submit">원본 조회</button></form>
     ${chips.length ? `<div class="chips"><span>예시 번호</span>${chips.map(a => `<button class="code-chip" data-code="${esc(a.code)}">${esc(a.code)}</button>`).join('')}</div>` : ''}</div></section>
@@ -1085,9 +1094,10 @@ document.addEventListener('click', async e => {
   if (t.dataset.go) { S.search = ''; nav(t.dataset.go); return; }
   const a = t.dataset.act, id = t.dataset.id;
   switch (a) {
-    case 'back': back(t.dataset.fb); break;
+    case 'back': goBack(t.dataset.fb); break;
+    case 'goback': goBack(); break;
     case 'logout': logout(); break;
-    case 'switch': { const r = S.role === 'issuer' ? 'student' : 'issuer'; S.role = r; try { localStorage.setItem('awardin.role', r); } catch(err) {} S.hist = []; toast(r === 'issuer' ? `${ORG.name} 계정으로 전환했어요.` : `${STUDENT.name} 학생 계정으로 전환했어요.`); nav(r === 'issuer' ? (pending().length ? 'c/requests' : 'c/home') : 's/home'); break; }
+    case 'switch': { const r = S.role === 'issuer' ? 'student' : 'issuer'; S.role = r; try { localStorage.setItem('awardin.role', r); } catch(err) {} S.hist = []; S.hsN = 0; toast(r === 'issuer' ? `${ORG.name} 계정으로 전환했어요.` : `${STUDENT.name} 학생 계정으로 전환했어요.`); nav(r === 'issuer' ? (pending().length ? 'c/requests' : 'c/home') : 's/home', {replace:true}); break; }
     case 'pop-notif': S.pop = S.pop === 'notif' ? null : 'notif'; render(false); break;
     case 'pop-me': S.pop = S.pop === 'me' ? null : 'me'; render(false); break;
     case 'parse': await doParse(); break;
